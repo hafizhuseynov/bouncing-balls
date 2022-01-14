@@ -1,1 +1,1 @@
-# Link to to preview | [Gallery](https://hafizhuseynov.github.io/bouncing-balls/)
+# Link to to preview | [Game](https://hafizhuseynov.github.io/bouncing-balls/)
