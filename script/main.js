@@ -179,14 +179,15 @@ class EvilCircle extends Shape {
 
 	setDesktopControls() {
 		let _this = this;
-		canvas.onkeydown = function (e) {
+
+		window.onkeydown = function (e) {
 			if (e.key === 'a' || e.key === 'ArrowLeft') {
 				_this.x -= _this.velX;
 			} else if (e.key === 'd' || e.key === 'ArrowRight') {
 				_this.x += _this.velX;
 			} else if (e.key === 'w' || e.key === 'ArrowUp') {
 				_this.y -= _this.velY;
-			} else if (e.key === 's' || e.key === 'Arrow') {
+			} else if (e.key === 's' || e.key === 'ArrowDown') {
 				_this.y += _this.velY;
 			};
 		};
