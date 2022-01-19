@@ -33,10 +33,10 @@ function createBalls() {
 	while (balls.length < 20) {
 		let size = random(10, 20);
 		let ball = new Ball(
-			random(0 + size, width - size),
-			random(0 + size, height - size),
-			random(-7, 7),
-			random(-7, 7),
+			random(size, width - size),
+			random(size, height - size),
+			random(-8, 8),
+			random(-8, 8),
 			'rgb(' + random(0, 255) + ',' + random(0, 255) + ',' + random(0, 255) + ')', size, true
 		);
 		balls.push(ball);
@@ -44,16 +44,16 @@ function createBalls() {
 }
 
 function startGame() {
-	myReq = requestAnimationFrame(startGame);
 	ctx.fillStyle = 'rgba(0,0,0,0.25)';
 	ctx.fillRect(0, 0, width, height);
 	createBalls();
+  myReq = requestAnimationFrame(startGame);
 	for (let i = 0; i < balls.length; i++) {
 		if (balls[i].exists) {
 			balls[i].draw();
 			balls[i].update();
 			balls[i].collisionDetect();
-			evilCircle.draw();
+      evilCircle.draw();
 			evilCircle.checkBounds();
 			evilCircle.collisionDetect();
 		};
@@ -61,10 +61,11 @@ function startGame() {
 	if (isAllTaken(balls)) {
 		setTimeout(() => {
 			cancelAnimationFrame(myReq);
+      balls.length = 0;
 			caption.style.display = 'block';
 			caption.style.opacity = 1;
 		}, 500);
-	};
+	}
 };
 
 function startAgain() {
@@ -72,6 +73,51 @@ function startAgain() {
 	caption.style.display = 'none';
 	evilCircle._size = 10;
 	startGame();
+}
+
+function handleClick(element,event){
+  switch(event.type){
+    case 'mousedown':
+      if (Math.abs(event.offsetX - element.x) <= element._size && Math.abs(event.offsetY - element.y) <= element._size) {
+				element._isTaken = true;
+			};
+      break;
+    case 'mousemove':
+      if (element._isTaken === true) {
+				element.x = event.offsetX;
+				element.y = event.offsetY;
+			};
+      break;
+    case 'mouseup':
+      if (element._isTaken === true) {
+				element._isTaken = false;
+			};
+      break;
+    default: break;
+  }
+}
+
+function handleTouch(element, event){
+  var touch = event.touches[0];
+  switch(event.type){
+    case 'touchstart':
+      if (Math.abs(touch.pageX - element.x) <= element._size && Math.abs(touch.pageY - element.y) <= element._size) {
+				element._isTaken = true;
+			};
+      break;
+    case 'touchmove':
+			if (element._isTaken === true) {
+				element.x = touch.pageX;
+				element.y = touch.pageY;
+			};
+      break;
+    case 'touchend':
+      if (element._isTaken === true) {
+				element._isTaken = false;
+			};
+      break;
+    default: break;
+  }
 }
 
 class Shape {
@@ -82,6 +128,7 @@ class Shape {
 		this.velY = velY;
 		this.exists = exists;
 	};
+  
 
 	draw() {
 		ctx.beginPath();
@@ -103,22 +150,8 @@ class Shape {
 		if ((this.y - this.size) <= 0) {
 			this.velY = -(this.velY);
 		};
-
 		this.x += this.velX;
 		this.y += this.velY;
-	};
-
-	collisionDetect() {
-		for (let j = 0; j < balls.length; j++) {
-			if (!(this === balls[j])) {
-				const dx = this.x - balls[j].x;
-				const dy = this.y - balls[j].y;
-				const distance = Math.sqrt(dx * dx + dy * dy);
-				if (distance < this.size + balls[j].size) {
-					balls[j].color = this.color = 'rgb(' + random(0, 255) + ',' + random(0, 255) + ',' + random(0, 255) + ')';
-				};
-			};
-		};
 	};
 }
 
@@ -128,6 +161,7 @@ class Ball extends Shape {
 		this.color = color;
 		this.size = size;
 	};
+
 	collisionDetect() {
 		for (let j = 0; j < balls.length; j++) {
 			if (!(this === balls[j]) && balls[j].exists) {
@@ -135,7 +169,8 @@ class Ball extends Shape {
 				const dy = this.y - balls[j].y;
 				const distance = Math.sqrt(dx * dx + dy * dy);
 				if (distance < this.size + balls[j].size) {
-					balls[j].color = this.color = 'rgb(' + random(0, 255) + ',' + random(0, 255) + ',' + random(0, 255) + ')';
+          this.color = `rgb(${random(0,255)},${random(0,255)},${random(0,255)})`;
+          //TODO Momentum and Collision rules.
 				};
 			};
 		};
@@ -143,16 +178,16 @@ class Ball extends Shape {
 };
 
 class EvilCircle extends Shape {
-	constructor(x, y, exists) {
+	constructor(size, x, y, exists) {
 		super(x, y, 20, 20, exists);
 		this._color = 'white';
-		this._size = 10;
+		this._size = size;
 		this._isTaken = false;
 	};
 
 	get size() {
 		return this._size;
-	}
+	};
 
 	draw() {
 		ctx.beginPath();
@@ -180,6 +215,7 @@ class EvilCircle extends Shape {
 	setDesktopControls() {
 		let _this = this;
 
+    //Controls whenever arrow buttons and 'W' 'A' 'S' 'D' pressed.
 		window.onkeydown = function (e) {
 			if (e.key === 'a' || e.key === 'ArrowLeft') {
 				_this.x -= _this.velX;
@@ -192,65 +228,45 @@ class EvilCircle extends Shape {
 			};
 		};
 
-		canvas.addEventListener('mousedown', e => {
-			if (Math.abs(e.offsetX - _this.x) <= _this._size && Math.abs(e.offsetY - _this.y) <= _this._size) {
-				_this._isTaken = true;
-			}
+    //Handling mouse events, take circle, move circle and leave circle 
+		canvas.addEventListener('mousedown', event => {
+			handleClick(this,event);
 		});
 
-		canvas.addEventListener('mousemove', e => {
-			if (_this._isTaken === true) {
-				_this.x = e.offsetX;
-				_this.y = e.offsetY;
-			}
+		canvas.addEventListener('mousemove', event => {
+			handleClick(this,event);
 		});
 
-		canvas.addEventListener('mouseup', e => {
-			if (_this._isTaken === true) {
-				_this._isTaken = false;
-			}
-		});
-
-		caption.addEventListener('click', () => {
-			startAgain();
+		canvas.addEventListener('mouseup', event => {
+			handleClick(this,event);
 		});
 	};
 
 	setMobileControls() {
-		let _this = this;
-		canvas.addEventListener('touchstart', (e) => {
-			var touch = e.touches[0];
-			if (Math.abs(touch.pageX - _this.x) <= _this._size && Math.abs(touch.pageY - _this.y) <= _this._size) {
-				_this._isTaken = true;
-			};
+    //Handling touch events, take circle, move circle and leave circle
+    canvas.addEventListener('touchstart', (event) => {
+			handleTouch(this,event);
 		});
 
-		canvas.addEventListener('touchmove', (e) => {
-			var touch = e.touches[0];
-			if (_this._isTaken === true) {
-				_this.x = touch.pageX;
-				_this.y = touch.pageY;
-			}
+		canvas.addEventListener('touchmove', (event) => {
+			handleTouch(this,event);
 		});
 
-		canvas.addEventListener('touchend', (e) => {
-			var touch = e.touches[0];
-			if (_this._isTaken === true) {
-				_this._isTaken = false;
-			}
-		});
-
-		caption.addEventListener('touchstart', () => {
-			startAgain();
-		});
+		canvas.addEventListener('touchend', (event) => {
+			handleTouch(this,event);
+		});		
 	}
 
 	collisionDetect() {
 		for (let j = 0; j < balls.length; j++) {
+      //Detect collision by distance between evil circle and ball
 			if (balls[j].exists) {
 				const dx = this.x - balls[j].x;
 				const dy = this.y - balls[j].y;
 				const distance = Math.sqrt(dx * dx + dy * dy);
+        //Disappear ball
+        //Make evil Circle in the color of ball
+        //Grow evil circle relative to ball's size
 				if (distance < this.size + balls[j].size) {
 					balls[j].exists = false;
 					evilCircle._color = balls[j].color;
@@ -262,13 +278,11 @@ class EvilCircle extends Shape {
 }
 
 let evilCircle = new EvilCircle(
-	random(0 + this.size, width - this.size),
-	random(0 + EvilCircle.size, height - EvilCircle.size),
+  size=13,
+	random(2*size, width - 2*size),
+	random(2*size, height - 2*size),
 	true
 );
-
-evilCircle.x = random(0 + evilCircle.size, width - evilCircle.size);
-evilCircle.y = random(0 + evilCircle.size, height - evilCircle.size);
 
 (isTouchDevice()) ? evilCircle.setMobileControls() : evilCircle.setDesktopControls();
 
